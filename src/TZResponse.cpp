@@ -32,3 +32,14 @@ std::optional<uint64_t> TZResponse::getResponseAsLong() const {
     if (const auto p = std::get_if<uint64_t>(&message)) return *p;
     return std::nullopt;
 }
+nlohmann::json TZResponse::toJson() const {
+    nlohmann::json json = {
+        {"code", code},
+    };
+
+    if (const auto i = std::get_if<int32_t>(&message)) json["message"] = *i;
+    else if (const auto u = std::get_if<uint64_t>(&message)) json["message"] = *u;
+    else json["message"] = *getResponseAsString();
+
+    return json;
+}

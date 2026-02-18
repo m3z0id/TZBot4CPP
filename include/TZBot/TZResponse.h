@@ -21,4 +21,5 @@ public:
     [[nodiscard]] std::optional<std::string> getResponseAsString() const;
     [[nodiscard]] std::optional<uint32_t> getResponseAsInt() const;
     [[nodiscard]] std::optional<uint64_t> getResponseAsLong() const;
+    [[nodiscard]] nlohmann::json toJson() const;
 };
