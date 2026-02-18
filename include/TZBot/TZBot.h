@@ -2,7 +2,7 @@
 #include <atomic>
 #include <future>
 
-#include "../TZResponse.h"
+#include "TZResponse.h"
 #include "TZFlags.h"
 #include "TZRequest.h"
 
