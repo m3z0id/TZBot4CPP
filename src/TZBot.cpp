@@ -57,7 +57,7 @@ std::future<TZResponse> TZBot::enqueue(TZRequest req) const {
     return future;
 }
 
-void TZBot::setFlags(const std::initializer_list<TZFlags> flags) {
+void TZBot::setFlags(const std::set<TZFlags>& flags) {
     uint8_t tempFlags = 0;
     for (auto flag : flags) {
         tempFlags |= static_cast<uint8_t>(flag);
@@ -143,7 +143,7 @@ std::vector<uint8_t> TZBot::requestToBytes(const TZRequest& request) const {
     std::vector<uint8_t> out;
     out.resize(header.size() + requestDataBytes.size());
     out.insert(out.begin(), header.begin(), header.end());
-    out.insert(out.begin() + header.size(), requestDataBytes.begin(), requestDataBytes.end());
+    out.insert(out.begin() + static_cast<long>(header.size()), requestDataBytes.begin(), requestDataBytes.end());
 
     return out;
 }

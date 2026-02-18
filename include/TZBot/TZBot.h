@@ -1,6 +1,7 @@
 #pragma once
 #include <atomic>
 #include <future>
+#include <set>
 
 #include "TZResponse.h"
 #include "TZFlags.h"
@@ -32,5 +33,5 @@ public:
     ~TZBot();
 
     [[nodiscard]] std::future<TZResponse> enqueue(TZRequest req) const;
-    void setFlags(std::initializer_list<TZFlags> flags);
+    void setFlags(const std::set<TZFlags>& flags);
 };
