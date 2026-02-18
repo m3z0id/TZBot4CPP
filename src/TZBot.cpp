@@ -47,7 +47,7 @@ TZBot::~TZBot() {
     close(fd);
 }
 
-std::future<TZResponse> TZBot::enqueue(TZRequest req) {
+std::future<TZResponse> TZBot::enqueue(TZRequest req) const {
     std::promise<TZResponse> promise;
     std::future<TZResponse> future = promise.get_future();
 
@@ -68,15 +68,14 @@ void TZBot::setFlags(const std::initializer_list<TZFlags> flags) {
     this->applyFlags = tempFlags;
 }
 
-void TZBot::eventLoop() {
+void TZBot::eventLoop() const {
     std::vector<uint8_t> buf;
 
     while (running.load(std::memory_order_acquire)) {
         buf.resize(4096);
         try {
             auto [request, promise] = requestQueue->pop();
-            std::vector<uint8_t> requestData;
-            requestToBytes(request, requestData);
+            std::vector<uint8_t> requestData = requestToBytes(request);
 
             send(fd, requestData.data(), requestData.size(), 0);
             ssize_t bytesRead = recv(fd, buf.data(), buf.size(), 0);
@@ -103,11 +102,8 @@ void TZBot::eventLoop() {
     }
 }
 
-void TZBot::requestToBytes(const TZRequest& request, std::vector<uint8_t>& out) const {
-    out = {};
-
-    nlohmann::json requestJson;
-    request.to_json(requestJson);
+std::vector<uint8_t> TZBot::requestToBytes(const TZRequest& request) const {
+    nlohmann::json requestJson = request.toJson();
 
     std::vector<uint8_t> requestDataBytes;
 
@@ -144,12 +140,15 @@ void TZBot::requestToBytes(const TZRequest& request, std::vector<uint8_t>& out) 
         header[6] = requestDataBytes.size() & 0xFF;
     }
 
+    std::vector<uint8_t> out;
     out.resize(header.size() + requestDataBytes.size());
     out.insert(out.begin(), header.begin(), header.end());
     out.insert(out.begin() + header.size(), requestDataBytes.begin(), requestDataBytes.end());
+
+    return out;
 }
 
-std::optional<TZResponse> TZBot::parseResponse(const std::vector<uint8_t>& resp) {
+std::optional<TZResponse> TZBot::parseResponse(const std::vector<uint8_t>& resp) const {
     if (resp.size() < 6) return std::nullopt;
     if (resp.at(0) != 't' || resp.at(1) != 'z' || resp.at(2) != 6) return std::nullopt;
 
@@ -175,5 +174,5 @@ std::optional<TZResponse> TZBot::parseResponse(const std::vector<uint8_t>& resp)
     if (flags & static_cast<uint8_t>(TZFlags::MSGPACK)) response = nlohmann::json::from_msgpack(body);
     else response = nlohmann::json::parse(body);
 
-    return TZResponse::from_json(response);
+    return TZResponse::fromJson(response);
 }

@@ -22,15 +22,15 @@ private:
     uint8_t applyFlags = 0;
 
     std::thread eventThread;
-    void eventLoop();
+    void eventLoop() const;
 
     EncryptionFactory* encryption;
-    std::optional<TZResponse> parseResponse(const std::vector<uint8_t>& resp);
-    void requestToBytes(const TZRequest& request, std::vector<uint8_t>& out) const;
+    [[nodiscard]] std::optional<TZResponse> parseResponse(const std::vector<uint8_t>& resp) const;
+    [[nodiscard]] std::vector<uint8_t> requestToBytes(const TZRequest& request) const;
 public:
     TZBot(const std::string& ip, uint16_t port, const std::string& apiKey, const std::string& cipher);
     ~TZBot();
 
-    std::future<TZResponse> enqueue(TZRequest req);
+    [[nodiscard]] std::future<TZResponse> enqueue(TZRequest req) const;
     void setFlags(std::initializer_list<TZFlags> flags);
 };

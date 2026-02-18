@@ -6,17 +6,17 @@ TZRequest::~TZRequest() = default;
 TZRequest::TZRequest(TZRequest&&) noexcept = default;
 TZRequest &TZRequest::operator=(TZRequest &&) noexcept = default;
 
-void TZRequest::to_json(nlohmann::json& json) const {
-    nlohmann::json dataJson = {};
-    data->to_json(dataJson);
-
-    json = nlohmann::json::object();
+nlohmann::json TZRequest::toJson() const {
+    nlohmann::json dataJson = data->toJson();
+    nlohmann::json json = nlohmann::json::object();
 
     if (data->isAPIKeyNeeded()) {
         if (apiKey.empty()) throw std::invalid_argument("API key is required");
         json["apiKey"] = apiKey;
     }
     if (!dataJson.empty()) json["data"] = dataJson;
+
+    return json;
 }
 void TZRequest::setApiKey(const std::string& key) {
     this->apiKey = key;

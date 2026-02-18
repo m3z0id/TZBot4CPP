@@ -1,6 +1,6 @@
 #include "TZBot/TZResponse.h"
 
-TZResponse TZResponse::from_json(const nlohmann::json& json) {
+TZResponse TZResponse::fromJson(const nlohmann::json& json) {
     int code = json.at("code").get<int>();
     Field field;
 

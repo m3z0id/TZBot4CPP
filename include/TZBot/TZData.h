@@ -7,7 +7,7 @@ public:
     virtual ~ITZData() = 0;
     [[nodiscard]] virtual uint8_t getByteRepr() const = 0;
     [[nodiscard]] virtual bool isAPIKeyNeeded() const = 0;
-    virtual void to_json(nlohmann::json& json) const = 0;
+    [[nodiscard]] virtual nlohmann::json toJson() const = 0;
 };
 inline ITZData::~ITZData() = default;
 
@@ -18,7 +18,7 @@ public:
 
     [[nodiscard]] uint8_t getByteRepr() const override;
     [[nodiscard]] bool isAPIKeyNeeded() const override;
-    void to_json(nlohmann::json& json) const override;
+    [[nodiscard]] nlohmann::json toJson() const override;
 };
 
 class TimezoneFromUserIDData : public ITZData {
@@ -30,7 +30,7 @@ public:
 
     [[nodiscard]] uint8_t getByteRepr() const override;
     [[nodiscard]] bool isAPIKeyNeeded() const override;
-    void to_json(nlohmann::json& json) const override;
+    [[nodiscard]] nlohmann::json toJson() const override;
 };
 
 class TimezoneFromIPData : public ITZData {
@@ -42,7 +42,7 @@ public:
 
     [[nodiscard]] uint8_t getByteRepr() const override;
     [[nodiscard]] bool isAPIKeyNeeded() const override;
-    void to_json(nlohmann::json& json) const override;
+    [[nodiscard]] nlohmann::json toJson() const override;
 };
 
 class UserIDUUIDLinkData : public ITZData {
@@ -55,7 +55,7 @@ public:
 
     [[nodiscard]] uint8_t getByteRepr() const override;
     [[nodiscard]] bool isAPIKeyNeeded() const override;
-    void to_json(nlohmann::json& json) const override;
+    [[nodiscard]] nlohmann::json toJson() const override;
 };
 
 class TimezoneFromUUIDData : public ITZData {
@@ -67,7 +67,7 @@ public:
 
     [[nodiscard]] uint8_t getByteRepr() const override;
     [[nodiscard]] bool isAPIKeyNeeded() const override;
-    void to_json(nlohmann::json& json) const override;
+    [[nodiscard]] nlohmann::json toJson() const override;
 };
 
 class IsLinkedData : public ITZData {
@@ -79,7 +79,7 @@ public:
 
     [[nodiscard]] uint8_t getByteRepr() const override;
     [[nodiscard]] bool isAPIKeyNeeded() const override;
-    void to_json(nlohmann::json& json) const override;
+    [[nodiscard]] nlohmann::json toJson() const override;
 };
 
 class UserIdFromUUIDData : public ITZData {
@@ -91,7 +91,7 @@ public:
 
     [[nodiscard]] uint8_t getByteRepr() const override;
     [[nodiscard]] bool isAPIKeyNeeded() const override;
-    void to_json(nlohmann::json& json) const override;
+    [[nodiscard]] nlohmann::json toJson() const override;
 };
 
 class UUIDFromUserIDData : public ITZData {
@@ -103,7 +103,7 @@ public:
 
     [[nodiscard]] uint8_t getByteRepr() const override;
     [[nodiscard]] bool isAPIKeyNeeded() const override;
-    void to_json(nlohmann::json& json) const override;
+    [[nodiscard]] nlohmann::json toJson() const override;
 };
 
 class UpdateTimezoneData : public ITZData {
@@ -116,5 +116,5 @@ public:
 
     [[nodiscard]] uint8_t getByteRepr() const override;
     [[nodiscard]] bool isAPIKeyNeeded() const override;
-    void to_json(nlohmann::json& json) const override;
+    [[nodiscard]] nlohmann::json toJson() const override;
 };

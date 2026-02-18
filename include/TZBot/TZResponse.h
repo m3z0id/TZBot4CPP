@@ -13,7 +13,7 @@ private:
     TZResponse(const int code, const Field& message) : code(code), message(message) {}
 public:
     TZResponse() = delete;
-    static TZResponse from_json(const nlohmann::json& json);
+    static TZResponse fromJson(const nlohmann::json& json);
 
     [[nodiscard]] bool isSuccessful() const;
     [[nodiscard]] int getCode() const;
