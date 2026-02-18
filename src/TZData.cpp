@@ -1,4 +1,4 @@
-#include "../include/TZData.h"
+#include "TZBot/TZData.h"
 
 #include "Helpers.h"
 

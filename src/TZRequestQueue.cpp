@@ -1,6 +1,6 @@
 #include "TZRequestQueue.h"
 
-#include "Exceptions.h"
+#include "TZBot/Exceptions.h"
 
 std::pair<TZRequest, std::promise<TZResponse>> TZRequestQueue::pop() {
     std::unique_lock lock(mtx);

@@ -1,4 +1,4 @@
-#include "../include/TZResponse.h"
+#include "TZBot/TZResponse.h"
 
 TZResponse TZResponse::from_json(const nlohmann::json& json) {
     int code = json.at("code").get<int>();

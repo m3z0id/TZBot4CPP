@@ -1,12 +1,12 @@
-#include "../include/TZBot.h"
+#include "TZBot/TZBot.h"
 
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <thread>
 #include <unistd.h>
 
-#include "Exceptions.h"
 #include "Helpers.h"
+#include "TZBot/Exceptions.h"
 #include "TZRequestQueue.h"
 #include "encryption/EncryptionFactory.h"
 

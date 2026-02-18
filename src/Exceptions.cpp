@@ -1,4 +1,4 @@
-#include "../include/Exceptions.h"
+#include "TZBot/Exceptions.h"
 
 const char *QueueAbortException::what() const noexcept { return "Queue Aborted"; }
 const char *PacketParseException::what() const noexcept { return "Failed to parse packet"; }

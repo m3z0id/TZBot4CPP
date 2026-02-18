@@ -1,4 +1,4 @@
-#include "../include/TZRequest.h"
+#include "TZBot/TZRequest.h"
 
 TZRequest::TZRequest(std::unique_ptr<ITZData> data) : data(std::move(data)) {}
 TZRequest::~TZRequest() = default;

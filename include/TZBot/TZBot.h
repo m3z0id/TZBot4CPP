@@ -2,9 +2,9 @@
 #include <atomic>
 #include <future>
 
+#include "../TZResponse.h"
 #include "TZFlags.h"
 #include "TZRequest.h"
-#include "TZResponse.h"
 
 class EncryptionFactory;
 class TZRequestQueue;
