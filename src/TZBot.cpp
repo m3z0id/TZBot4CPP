@@ -11,7 +11,10 @@
 #include "encryption/EncryptionFactory.h"
 
 TZBot::TZBot(const std::string& ip, const uint16_t port, const std::string& apiKey, const std::string& cipher) : ip(ip), port(port), apiKey(apiKey) {
-    if (!isValidIP(ip)) throw std::invalid_argument("Invalid IP address");
+    if (!isValidIP(ip)) {
+        if (const std::string ipRes = resolve(ip); !ipRes.empty()) this->ip = ipRes;
+        else throw std::invalid_argument("Invalid IP address");
+    } else this->ip = ip;
 
     if (!cipher.empty()) encryption = new EncryptionFactory(cipher);
     else encryption = nullptr;
@@ -22,7 +25,7 @@ TZBot::TZBot(const std::string& ip, const uint16_t port, const std::string& apiK
     sockaddr_in serv_addr{};
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(port);
-    if (inet_pton(AF_INET, ip.c_str(), &serv_addr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, this->ip.c_str(), &serv_addr.sin_addr) <= 0) {
         close(fd);
         throw std::runtime_error("Invalid remote address");
     }

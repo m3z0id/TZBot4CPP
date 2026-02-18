@@ -5,8 +5,26 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
-#include <cstdint>
 #include <zlib.h>
+#include <netdb.h>
+
+inline std::string resolve(const std::string& hostname) {
+    addrinfo hints{}, *res;
+
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if (getaddrinfo(hostname.c_str(), nullptr, &hints, &res) != 0) return "";
+
+    auto* ipv4 = reinterpret_cast<sockaddr_in*>(res->ai_addr);
+    std::string ipStr;
+    ipStr.resize(INET_ADDRSTRLEN);
+
+    inet_ntop(AF_INET, &(ipv4->sin_addr), ipStr.data(), INET_ADDRSTRLEN);
+    freeaddrinfo(res);
+
+    return ipStr;
+}
 
 inline std::vector<uint8_t> gzipCompress(const std::vector<uint8_t>& data, int level = Z_DEFAULT_COMPRESSION) {
     if (data.empty()) return {};
