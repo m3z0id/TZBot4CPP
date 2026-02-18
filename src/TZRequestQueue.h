@@ -5,8 +5,8 @@
 #include <mutex>
 #include <queue>
 
-#include "TZRequest.h"
-#include "TZResponse.h"
+#include "../include/TZRequest.h"
+#include "../include/TZResponse.h"
 
 class TZRequestQueue {
     bool aborted = false;

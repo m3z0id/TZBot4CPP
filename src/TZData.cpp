@@ -7,7 +7,7 @@ PingData::~PingData() = default;
 
 uint8_t PingData::getByteRepr() const { return 0; }
 bool PingData::isAPIKeyNeeded() const { return false; }
-void PingData::to_json(nlohmann::json& json) const { json = {}; }
+void PingData::to_json(nlohmann::json& json) const { json = nlohmann::json::object(); }
 
 
 TimezoneFromUserIDData::TimezoneFromUserIDData(const uint64_t userId) : userId(userId) {}

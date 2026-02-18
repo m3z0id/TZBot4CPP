@@ -4,9 +4,10 @@
 
 #include "TZFlags.h"
 #include "TZRequest.h"
-#include "TZRequestQueue.h"
 #include "TZResponse.h"
-#include "encryption/EncryptionFactory.h"
+
+class EncryptionFactory;
+class TZRequestQueue;
 
 class TZBot {
 private:
@@ -16,7 +17,7 @@ private:
     uint16_t port;
 
     int fd;
-    TZRequestQueue requestQueue;
+    TZRequestQueue* requestQueue;
     std::string apiKey;
     uint8_t applyFlags = 0;
 

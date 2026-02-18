@@ -9,7 +9,9 @@ add_library(TZBot4CPP SHARED src/TZBot.cpp
         src/TZResponse.cpp
         src/Helpers.h
         src/TZRequestQueue.cpp
-        src/encryption/EncryptionFactory.cpp)
+        src/encryption/EncryptionFactory.cpp
+        include/Exceptions.h
+        src/Exceptions.cpp)
 
 find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)

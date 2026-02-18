@@ -5,7 +5,10 @@
 #include <thread>
 #include <unistd.h>
 
+#include "Exceptions.h"
 #include "Helpers.h"
+#include "TZRequestQueue.h"
+#include "encryption/EncryptionFactory.h"
 
 TZBot::TZBot(const std::string& ip, const uint16_t port, const std::string& apiKey, const std::string& cipher) : ip(ip), port(port), apiKey(apiKey) {
     if (!isValidIP(ip)) throw std::invalid_argument("Invalid IP address");
@@ -29,15 +32,17 @@ TZBot::TZBot(const std::string& ip, const uint16_t port, const std::string& apiK
         throw std::runtime_error("Connect failed");
     }
 
+    requestQueue = new TZRequestQueue;
     running.store(true);
     eventThread = std::thread(&TZBot::eventLoop, this);
 }
 
 TZBot::~TZBot() {
     running.store(false, std::memory_order_release);
-    requestQueue.abort();
+    requestQueue->abort();
     eventThread.join();
 
+    delete requestQueue;
     delete encryption;
     close(fd);
 }
@@ -48,7 +53,7 @@ std::future<TZResponse> TZBot::enqueue(TZRequest req) {
 
     req.setApiKey(apiKey);
 
-    requestQueue.push(std::move(req), std::move(promise));
+    requestQueue->push(std::move(req), std::move(promise));
     return future;
 }
 
@@ -68,35 +73,34 @@ void TZBot::eventLoop() {
 
     while (running.load(std::memory_order_acquire)) {
         buf.resize(4096);
-        const auto& [request, promiseConst] = requestQueue.pop();
-        std::promise<TZResponse> promise = std::move(const_cast<std::promise<TZResponse> &>(promiseConst));
+        try {
+            auto [request, promise] = requestQueue->pop();
+            std::vector<uint8_t> requestData;
+            requestToBytes(request, requestData);
 
-        std::vector<uint8_t> requestData;
-        requestToBytes(request, requestData);
+            send(fd, requestData.data(), requestData.size(), 0);
+            ssize_t bytesRead = recv(fd, buf.data(), buf.size(), 0);
 
-        send(fd, requestData.data(), requestData.size(), 0);
-        ssize_t bytesRead = recv(fd, buf.data(), buf.size(), 0);
+            if (bytesRead < 0) {
+                promise.set_exception(std::make_exception_ptr(SocketReadException()));
+                continue;
+            }
 
-        if (bytesRead < 0) {
-            promise.set_exception(std::make_exception_ptr(std::runtime_error("Received bad packet")));
-            continue;
+            buf.resize(bytesRead);
+
+            std::optional<TZResponse> response = parseResponse(buf);
+            if (!response.has_value()) {
+                promise.set_exception(std::make_exception_ptr(PacketParseException()));
+                continue;
+            }
+
+            promise.set_value(response.value());
+
+            buf.clear();
+        } catch (QueueAbortException& e) {
+            break;
         }
-
-        buf.resize(bytesRead);
-
-        std::optional<TZResponse> response = parseResponse(buf);
-        if (!response.has_value()) {
-            promise.set_exception(std::make_exception_ptr(std::runtime_error("Received bad packet")));
-            continue;
-        }
-
-        promise.set_value(response.value());
-
-        buf.clear();
     }
-    try {
-        requestQueue.abort();
-    } catch (std::exception& ignored) {}
 }
 
 void TZBot::requestToBytes(const TZRequest& request, std::vector<uint8_t>& out) const {

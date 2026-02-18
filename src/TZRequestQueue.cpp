@@ -1,4 +1,6 @@
-#include "../include/TZRequestQueue.h"
+#include "TZRequestQueue.h"
+
+#include "Exceptions.h"
 
 std::pair<TZRequest, std::promise<TZResponse>> TZRequestQueue::pop() {
     std::unique_lock lock(mtx);
@@ -7,7 +9,7 @@ std::pair<TZRequest, std::promise<TZResponse>> TZRequestQueue::pop() {
         return !queue.empty() || aborted;
     });
 
-    if (aborted) throw std::runtime_error("TZRequestQueue::pop: aborted");
+    if (aborted) throw QueueAbortException();
 
     auto item = std::move(queue.front());
     queue.pop();

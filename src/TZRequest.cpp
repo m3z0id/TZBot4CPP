@@ -10,7 +10,7 @@ void TZRequest::to_json(nlohmann::json& json) const {
     nlohmann::json dataJson = {};
     data->to_json(dataJson);
 
-    json = {};
+    json = nlohmann::json::object();
 
     if (data->isAPIKeyNeeded()) {
         if (apiKey.empty()) throw std::invalid_argument("API key is required");

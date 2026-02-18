@@ -1,4 +1,4 @@
-#include "../../include/encryption/EncryptionFactory.h"
+#include "EncryptionFactory.h"
 
 #include <cstring>
 #include <openssl/evp.h>

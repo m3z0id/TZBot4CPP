@@ -16,7 +16,7 @@ public:
     void to_json(nlohmann::json& json) const;
 
     void setApiKey(const std::string& key);
-    uint8_t getRequestType() const;
+    [[nodiscard]] uint8_t getRequestType() const;
 private:
     std::string apiKey;
     std::unique_ptr<ITZData> data;
