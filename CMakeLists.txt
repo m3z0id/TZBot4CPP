@@ -9,6 +9,7 @@ set(SOURCES src/TZBot.cpp
         src/TZData.cpp
         src/TZResponse.cpp
         src/TZRequestQueue.cpp
+        src/Exceptions.cpp
         src/encryption/EncryptionFactory.cpp)
 
 option(TZBOT4CPP_BUILD_SHARED "Build TZBot4CPP as a shared library" ON)
