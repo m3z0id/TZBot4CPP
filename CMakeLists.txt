@@ -34,18 +34,27 @@ find_package(OpenSSL REQUIRED)
 find_package(ZLIB REQUIRED)
 
 # nlohmann json
-if(NOT TARGET nlohmann_json::nlohmann_json)
-    FetchContent_Declare(
-            json
-            GIT_REPOSITORY https://github.com/nlohmann/json.git
-            GIT_TAG v3.12.0
-    )
-    FetchContent_MakeAvailable(json)
+if(nlohmann_json_FOUND)
+    message(STATUS "Using system's nlohmann/json")
+else()
+    message(STATUS "nlohmann/json not found. Falling back to amalgamated header...")
+    set(JSON_VERSION v3.12.0)
+    set(JSON_HEADER_URL https://github.com/nlohmann/json/releases/download/${JSON_VERSION}/json.hpp)
+    set(JSON_DEST_DIR "${CMAKE_BINARY_DIR}/external/nlohmann")
+    set(JSON_DEST_FILE "${JSON_DEST_DIR}/json.hpp")
 
-    if(TARGET nlohmann_json AND NOT TARGET nlohmann_json::nlohmann_json)
-        add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json)
+    if(NOT EXISTS "${JSON_DEST_FILE}")
+        file(MAKE_DIRECTORY "${JSON_DEST_DIR}")
+        file(DOWNLOAD "${JSON_HEADER_URL}" "${JSON_DEST_FILE}" SHOW_PROGRESS)
     endif()
-endif ()
+
+    if(NOT TARGET nlohmann_json::nlohmann_json)
+        add_library(nlohmann_json INTERFACE)
+        add_library(nlohmann_json::nlohmann_json ALIAS nlohmann_json)
+
+        target_include_directories(nlohmann_json INTERFACE "${CMAKE_BINARY_DIR}/external")
+    endif()
+endif()
 
 # Linking
 target_link_libraries(TZBot4CPP PUBLIC $<BUILD_INTERFACE:nlohmann_json::nlohmann_json>)
