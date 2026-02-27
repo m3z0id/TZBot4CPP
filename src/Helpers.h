@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <zlib.h>
 #include <netdb.h>
+#include "TZBot/Exceptions.h"
 
 inline std::string resolve(const std::string& hostname) {
     addrinfo hints{}, *res;
@@ -67,7 +68,7 @@ inline std::vector<uint8_t> gzipDecompress(const std::vector<uint8_t>& compresse
     stream.next_in = const_cast<Bytef*>(compressed.data());
     stream.avail_in = compressed.size();
 
-    if (inflateInit2(&stream, 16 + MAX_WBITS) != Z_OK) throw std::runtime_error("inflateInit2 failed");
+    if (inflateInit2(&stream, 16 + MAX_WBITS) != Z_OK) throw PacketParseException();
 
     std::vector<uint8_t> out{};
     out.resize(1024 * 8);
@@ -83,7 +84,7 @@ inline std::vector<uint8_t> gzipDecompress(const std::vector<uint8_t>& compresse
 
         if (ret == Z_STREAM_ERROR || ret == Z_DATA_ERROR || ret == Z_MEM_ERROR) {
             inflateEnd(&stream);
-            throw std::runtime_error("inflate failed");
+            throw PacketParseException();
         }
 
     } while (ret != Z_STREAM_END);

@@ -1,18 +1,13 @@
 #include "TZBot/TZResponse.h"
 
+#include "TZBot/Exceptions.h"
+
+TZResponse::TZResponse(const nlohmann::json& json) : json(json) {
+    if (!json.at("code").is_number_integer()) throw PacketParseException();
+    code = json["code"];
+}
 TZResponse TZResponse::fromJson(const nlohmann::json& json) {
-    int code = json.at("code").get<int>();
-    Field field;
-
-    if (const nlohmann::json &msg = json.at("message"); msg.is_string()) field = msg.get<std::string>();
-    else if (msg.is_number()) {
-        if (auto temp = msg.get<uint64_t>(); temp > std::numeric_limits<int32_t>::max()) field = temp;
-        else field = static_cast<int32_t>(temp);
-    } else {
-        throw std::runtime_error("invalid type");
-    }
-
-    return {code, field};
+    return {json};
 }
 bool TZResponse::isSuccessful() const {
     return code == 200;
@@ -21,25 +16,27 @@ int TZResponse::getCode() const {
     return code;
 }
 std::optional<std::string> TZResponse::getResponseAsString() const {
-    if (const auto p = std::get_if<std::string>(&message)) return *p;
+    if (json.at("message").is_string()) return json.at("message");
     return std::nullopt;
 }
-std::optional<uint32_t> TZResponse::getResponseAsInt() const {
-    if (const auto p = std::get_if<int32_t>(&message)) return *p;
+std::optional<int32_t> TZResponse::getResponseAsInt() const {
+    if (json.at("message").is_number_integer() &&
+        json.at("message").get<int64_t>() >= std::numeric_limits<int32_t>::min() &&
+        json.at("message").get<uint64_t>() <= std::numeric_limits<int32_t>::max()) {
+
+        return json.at("message").get<int32_t>();
+    }
     return std::nullopt;
 }
 std::optional<uint64_t> TZResponse::getResponseAsLong() const {
-    if (const auto p = std::get_if<uint64_t>(&message)) return *p;
+    if (json.at("message").is_number_integer() &&
+        json.at("message").get<int64_t>() >= std::numeric_limits<uint64_t>::min() &&
+        json.at("message").get<uint64_t>() <= std::numeric_limits<uint64_t>::max()) {
+
+        return json.at("message").get<uint64_t>();
+    }
     return std::nullopt;
 }
 nlohmann::json TZResponse::toJson() const {
-    nlohmann::json json = {
-        {"code", code},
-    };
-
-    if (const auto i = std::get_if<int32_t>(&message)) json["message"] = *i;
-    else if (const auto u = std::get_if<uint64_t>(&message)) json["message"] = *u;
-    else json["message"] = *getResponseAsString();
-
     return json;
 }
