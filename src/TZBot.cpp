@@ -7,6 +7,7 @@
 
 #include "Helpers.h"
 #include "TZBot/Exceptions.h"
+#include "TZBot/TZFlags.h"
 #include "TZRequestQueue.h"
 #include "encryption/EncryptionFactory.h"
 
