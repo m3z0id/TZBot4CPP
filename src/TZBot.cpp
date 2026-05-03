@@ -60,15 +60,12 @@ std::future<TZResponse> TZBot::enqueue(TZRequest req) const {
     return future;
 }
 
-void TZBot::setFlags(const std::set<TZFlags>& flags) {
-    uint8_t tempFlags = 0;
-    for (auto flag : flags) {
-        tempFlags |= static_cast<uint8_t>(flag);
-    }
+void TZBot::setFlags(const uint8_t flags) {
+    static constexpr uint8_t MAX_FLAGS = static_cast<uint8_t>(TZFlags::AES) | static_cast<uint8_t>(TZFlags::CHACHA20) | static_cast<uint8_t>(TZFlags::GZIP) | static_cast<uint8_t>(TZFlags::MSGPACK);
+    if (flags > MAX_FLAGS) throw std::invalid_argument("Invalid flags inputted!");
 
-    if (tempFlags & static_cast<uint8_t>(TZFlags::AES) && tempFlags & static_cast<uint8_t>(TZFlags::CHACHA20)) throw std::invalid_argument("Only one encryption algorithm is applicable");
-
-    this->applyFlags = tempFlags;
+    if (flags & static_cast<uint8_t>(TZFlags::AES) && flags & static_cast<uint8_t>(TZFlags::CHACHA20)) throw std::invalid_argument("Only one encryption algorithm is applicable");
+    this->applyFlags = flags;
 }
 
 void TZBot::eventLoop() const {

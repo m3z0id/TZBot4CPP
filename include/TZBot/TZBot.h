@@ -1,10 +1,8 @@
 #pragma once
 #include <atomic>
 #include <future>
-#include <set>
 
 #include "TZResponse.h"
-#include "TZFlags.h"
 #include "TZRequest.h"
 
 class EncryptionFactory;
@@ -33,5 +31,5 @@ public:
     ~TZBot();
 
     [[nodiscard]] std::future<TZResponse> enqueue(TZRequest req) const;
-    void setFlags(const std::set<TZFlags>& flags);
+    void setFlags(uint8_t flags);
 };
