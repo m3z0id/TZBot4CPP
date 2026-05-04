@@ -27,7 +27,7 @@ private:
     [[nodiscard]] std::optional<TZResponse> parseResponse(const std::vector<uint8_t>& resp) const;
     [[nodiscard]] std::vector<uint8_t> requestToBytes(const TZRequest& request) const;
 public:
-    TZBot(const std::string& ip, uint16_t port, const std::string& apiKey, const std::string& cipher);
+    TZBot(const std::string& ip, uint16_t port, const std::string& apiKey, const std::array<uint8_t, 32>* cipherKey);
     ~TZBot();
 
     [[nodiscard]] std::future<TZResponse> enqueue(TZRequest req) const;

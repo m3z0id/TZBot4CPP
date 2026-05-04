@@ -2,7 +2,6 @@
 #include <cstdint>
 #include <nlohmann/json.hpp>
 #include <string>
-#include <variant>
 
 class TZResponse {
 private:
@@ -18,6 +17,6 @@ public:
 
     [[nodiscard]] std::optional<std::string> getResponseAsString() const;
     [[nodiscard]] std::optional<int32_t> getResponseAsInt() const;
-    [[nodiscard]] std::optional<uint64_t> getResponseAsLong() const;
+    [[nodiscard]] std::optional<uint64_t> getResponseAsULong() const;
     [[nodiscard]] nlohmann::json toJson() const;
 };

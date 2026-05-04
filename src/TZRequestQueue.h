@@ -9,10 +9,10 @@
 #include "TZBot/TZResponse.h"
 
 class TZRequestQueue {
-    bool aborted = false;
     std::queue<std::pair<TZRequest, std::promise<TZResponse>>> queue;
     std::mutex mtx;
     std::condition_variable cv;
+    bool aborted = false;
 
 public:
     std::pair<TZRequest, std::promise<TZResponse>> pop();

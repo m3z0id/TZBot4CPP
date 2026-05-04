@@ -35,9 +35,9 @@ public:
 
 class TimezoneFromIPData : public ITZData {
 private:
-    std::string ip;
+    uint32_t ip;
 public:
-    TimezoneFromIPData(const std::string& ip);
+    TimezoneFromIPData(uint32_t ip);
     ~TimezoneFromIPData() override;
 
     [[nodiscard]] uint8_t getByteRepr() const override;

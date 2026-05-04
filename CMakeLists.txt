@@ -31,7 +31,6 @@ add_library(TZBot4CPP ${LIB_TYPE} ${SOURCES})
 add_library(TZBot4CPP::TZBot4CPP ALIAS TZBot4CPP)
 
 find_package(OpenSSL REQUIRED)
-find_package(ZLIB REQUIRED)
 
 # nlohmann json
 if(nlohmann_json_FOUND)
@@ -58,6 +57,6 @@ endif()
 
 # Linking
 target_link_libraries(TZBot4CPP PUBLIC $<BUILD_INTERFACE:nlohmann_json::nlohmann_json>)
-target_link_libraries(TZBot4CPP PUBLIC OpenSSL::Crypto ZLIB::ZLIB)
+target_link_libraries(TZBot4CPP PUBLIC OpenSSL::Crypto)
 # Public includes
 target_include_directories(TZBot4CPP PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include> $<INSTALL_INTERFACE:include>)

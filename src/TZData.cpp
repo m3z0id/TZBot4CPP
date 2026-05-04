@@ -22,10 +22,7 @@ nlohmann::json TimezoneFromUserIDData::toJson() const {
 }
 
 
-TimezoneFromIPData::TimezoneFromIPData(const std::string& ip) {
-    if (!isValidIP(ip)) throw std::invalid_argument("Invalid IP");
-    this->ip = ip;
-}
+TimezoneFromIPData::TimezoneFromIPData(const uint32_t ip) : ip(ip) {}
 TimezoneFromIPData::~TimezoneFromIPData() = default;
 
 uint8_t TimezoneFromIPData::getByteRepr() const { return 2; }
@@ -97,7 +94,7 @@ nlohmann::json UserIdFromUUIDData::toJson() const {
 }
 
 
-UUIDFromUserIDData::UUIDFromUserIDData(uint64_t userId) : userId(userId) {}
+UUIDFromUserIDData::UUIDFromUserIDData(const uint64_t userId) : userId(userId) {}
 UUIDFromUserIDData::~UUIDFromUserIDData() = default;
 
 uint8_t UUIDFromUserIDData::getByteRepr() const { return 7; }

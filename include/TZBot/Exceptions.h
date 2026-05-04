@@ -1,5 +1,5 @@
 #pragma once
-#include <stdexcept>
+#include <exception>
 
 class QueueAbortException : public std::exception {
 public:

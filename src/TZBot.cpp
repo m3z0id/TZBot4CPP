@@ -11,13 +11,13 @@
 #include "TZRequestQueue.h"
 #include "encryption/EncryptionFactory.h"
 
-TZBot::TZBot(const std::string& ip, const uint16_t port, const std::string& apiKey, const std::string& cipher) : ip(ip), port(port), apiKey(apiKey) {
+TZBot::TZBot(const std::string& ip, const uint16_t port, const std::string& apiKey, const std::array<uint8_t, 32>* cipherKey) : ip(ip), port(port), apiKey(apiKey) {
     if (!isValidIP(ip)) {
         if (const std::string ipRes = resolve(ip); !ipRes.empty()) this->ip = ipRes;
         else throw std::invalid_argument("Invalid IP address");
     } else this->ip = ip;
 
-    if (!cipher.empty()) encryption = new EncryptionFactory(cipher);
+    if (cipherKey != nullptr && cipherKey->size() == 32) encryption = new EncryptionFactory(*cipherKey);
     else encryption = nullptr;
 
     fd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -62,7 +62,7 @@ std::future<TZResponse> TZBot::enqueue(TZRequest req) const {
 }
 
 void TZBot::setFlags(const uint8_t flags) {
-    static constexpr uint8_t MAX_FLAGS = static_cast<uint8_t>(TZFlags::AES) | static_cast<uint8_t>(TZFlags::CHACHA20) | static_cast<uint8_t>(TZFlags::GZIP) | static_cast<uint8_t>(TZFlags::MSGPACK);
+    static constexpr uint8_t MAX_FLAGS = static_cast<uint8_t>(TZFlags::AES) | static_cast<uint8_t>(TZFlags::CHACHA20) | static_cast<uint8_t>(TZFlags::MSGPACK);
     if (flags > MAX_FLAGS) throw std::invalid_argument("Invalid flags inputted!");
 
     if (flags & static_cast<uint8_t>(TZFlags::AES) && flags & static_cast<uint8_t>(TZFlags::CHACHA20)) throw std::invalid_argument("Only one encryption algorithm is applicable");
@@ -81,7 +81,7 @@ void TZBot::eventLoop() const {
             send(fd, requestData.data(), requestData.size(), 0);
             ssize_t bytesRead = recv(fd, buf.data(), buf.size(), 0);
 
-            if (bytesRead < 0) {
+            if (bytesRead < 1) {
                 promise.set_exception(std::make_exception_ptr(SocketReadException()));
                 continue;
             }
@@ -97,7 +97,7 @@ void TZBot::eventLoop() const {
             promise.set_value(response.value());
 
             buf.clear();
-        } catch (QueueAbortException& e) {
+        } catch (QueueAbortException&) {
             break;
         }
     }
@@ -106,74 +106,77 @@ void TZBot::eventLoop() const {
 std::vector<uint8_t> TZBot::requestToBytes(const TZRequest& request) const {
     nlohmann::json requestJson = request.toJson();
 
-    std::vector<uint8_t> requestDataBytes;
-
-    if (applyFlags & static_cast<uint8_t>(TZFlags::MSGPACK)) {
-        requestDataBytes = nlohmann::json::to_msgpack(requestJson);
-    } else {
+    std::vector<uint8_t> data;
+    if (applyFlags & static_cast<uint8_t>(TZFlags::MSGPACK)) data = nlohmann::json::to_msgpack(requestJson);
+    else {
         std::string json = requestJson.dump();
-        requestDataBytes = std::vector<uint8_t>(json.begin(), json.end());
+        data.assign(json.begin(), json.end());
     }
 
-    if (applyFlags & static_cast<uint8_t>(TZFlags::GZIP)) {
-        requestDataBytes = gzipCompress(requestDataBytes);
-    }
+    bool doEncrypt = ((applyFlags & static_cast<uint8_t>(TZFlags::AES) ||
+                       applyFlags & static_cast<uint8_t>(TZFlags::CHACHA20)) &&
+                      encryption != nullptr);
 
-    std::vector<uint8_t> header;
-    header.resize(7);
+    size_t bodySize = data.size();
+    if (doEncrypt) bodySize = 12 + data.size() + 16;
 
-    header[0] = 't';
-    header[1] = 'z';
-    header[2] = 7;
-    header[3] = request.getRequestType();
-    header[4] = applyFlags;
-
-    if ((applyFlags & static_cast<uint8_t>(TZFlags::AES) || applyFlags & static_cast<uint8_t>(TZFlags::CHACHA20)) && encryption != nullptr) {
-        uint16_t lengthAfterEncryption = requestDataBytes.size() + 16 + 12;
-
-        header[5] = (lengthAfterEncryption >> 8) & 0xFF;
-        header[6] = lengthAfterEncryption & 0xFF;
-
-        if (applyFlags & static_cast<uint8_t>(TZFlags::AES)) requestDataBytes = encryption->AESEncrypt(requestDataBytes, header);
-        else if (applyFlags & static_cast<uint8_t>(TZFlags::CHACHA20)) requestDataBytes = encryption->ChaCha20Encrypt(requestDataBytes, header);
-    } else {
-        header[5] = (requestDataBytes.size() >> 8) & 0xFF;
-        header[6] = requestDataBytes.size() & 0xFF;
-    }
-
+    constexpr size_t HEADER_SIZE = 7;
     std::vector<uint8_t> out;
-    out.resize(header.size() + requestDataBytes.size());
-    out.insert(out.begin(), header.begin(), header.end());
-    out.insert(out.begin() + static_cast<long>(header.size()), requestDataBytes.begin(), requestDataBytes.end());
+    out.resize(HEADER_SIZE + bodySize);
+
+    out[0] = 't';
+    out[1] = 'z';
+    out[2] = 7;
+    out[3] = request.getRequestType();
+    out[4] = applyFlags;
+    out[5] = static_cast<uint8_t>((bodySize >> 8) & 0xFF);
+    out[6] = static_cast<uint8_t>(bodySize & 0xFF);
+
+    if (doEncrypt) {  // pointer can't be null here
+        std::vector<uint8_t> encrypted;
+        if (applyFlags & static_cast<uint8_t>(TZFlags::AES)) encrypted = encryption->AESEncrypt(data, {out.begin(), out.begin() + 7});
+        else encrypted = encryption->ChaCha20Encrypt(data, {out.begin(), out.begin() + 7});
+
+        std::memcpy(out.data() + HEADER_SIZE, encrypted.data(), encrypted.size());
+    } else std::memcpy(out.data() + HEADER_SIZE, data.data(), data.size());
 
     return out;
 }
 
 std::optional<TZResponse> TZBot::parseResponse(const std::vector<uint8_t>& resp) const {
     if (resp.size() < 6) return std::nullopt;
-    if (resp.at(0) != 't' || resp.at(1) != 'z' || resp.at(2) != 6) return std::nullopt;
 
-    std::vector header(resp.begin(), resp.begin() + resp.at(2));
-    uint8_t flags = resp.at(3);
-    uint16_t payloadLength = (resp.at(4) << 8) | resp.at(5);
+    const uint8_t* raw = resp.data();
+    uint8_t headerLen = raw[2];
 
-    if (resp.size() != payloadLength + header.at(2)) return std::nullopt;
-    std::vector body(resp.begin() + resp.at(2), resp.end());
+    if (raw[0] != 't' || raw[1] != 'z' || headerLen < 6) return std::nullopt;
 
-    if (flags & static_cast<uint8_t>(TZFlags::AES) || flags & static_cast<uint8_t>(TZFlags::CHACHA20)) {
-        if (encryption == nullptr) return std::nullopt;
+    uint8_t flags = raw[3];
+    uint16_t payloadLength = (raw[4] << 8) | raw[5];
 
-        if (flags & static_cast<uint8_t>(TZFlags::AES)) body = encryption->AESDecrypt(body, header);
-        else if (flags & static_cast<uint8_t>(TZFlags::CHACHA20)) body = encryption->ChaCha20Decrypt(body, header);
+    if (resp.size() != static_cast<size_t>(payloadLength + headerLen)) return std::nullopt;
+
+    const uint8_t* bodyPtr = raw + headerLen;
+    size_t bodyLen = payloadLength;
+
+    std::vector<uint8_t> transformedData;
+    if ((flags & (static_cast<uint8_t>(TZFlags::AES) | static_cast<uint8_t>(TZFlags::CHACHA20))) && encryption) {
+        std::vector<uint8_t> headerAAD(raw, raw + headerLen);
+        std::vector<uint8_t> encryptedBody(bodyPtr, bodyPtr + bodyLen);
+
+        if (flags & static_cast<uint8_t>(TZFlags::AES)) transformedData = encryption->AESDecrypt(encryptedBody, headerAAD);
+        else transformedData = encryption->ChaCha20Decrypt(encryptedBody, headerAAD);
+
+        bodyPtr = transformedData.data();
+        bodyLen = transformedData.size();
     }
 
-    if (flags & static_cast<uint8_t>(TZFlags::GZIP)) {
-        body = gzipDecompress(body);
+    try {
+        nlohmann::json j;
+        if (flags & static_cast<uint8_t>(TZFlags::MSGPACK)) j = nlohmann::json::from_msgpack(bodyPtr, bodyPtr + bodyLen);
+        else j = nlohmann::json::parse(bodyPtr, bodyPtr + bodyLen);
+        return TZResponse::fromJson(j);
+    } catch (...) {
+        return std::nullopt;
     }
-
-    nlohmann::json response;
-    if (flags & static_cast<uint8_t>(TZFlags::MSGPACK)) response = nlohmann::json::from_msgpack(body);
-    else response = nlohmann::json::parse(body);
-
-    return TZResponse::fromJson(response);
 }
