@@ -129,8 +129,8 @@ std::vector<uint8_t> TZBot::requestToBytes(const TZRequest& request) const {
     out[2] = 7;
     out[3] = request.getRequestType();
     out[4] = applyFlags;
-    out[5] = static_cast<uint8_t>((bodySize >> 8) & 0xFF);
-    out[6] = static_cast<uint8_t>(bodySize & 0xFF);
+    out[5] = static_cast<uint8_t>(bodySize & 0xFF);
+    out[6] = static_cast<uint8_t>((bodySize >> 8) & 0xFF);
 
     if (doEncrypt) {  // pointer can't be null here
         std::vector<uint8_t> encrypted;
@@ -152,7 +152,7 @@ std::optional<TZResponse> TZBot::parseResponse(const std::vector<uint8_t>& resp)
     if (raw[0] != 't' || raw[1] != 'z' || headerLen < 6) return std::nullopt;
 
     uint8_t flags = raw[3];
-    uint16_t payloadLength = (raw[4] << 8) | raw[5];
+    uint16_t payloadLength = raw[4] | (raw[5] << 8);
 
     if (resp.size() != static_cast<size_t>(payloadLength + headerLen)) return std::nullopt;
 
